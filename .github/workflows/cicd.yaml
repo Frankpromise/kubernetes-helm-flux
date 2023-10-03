@@ -24,7 +24,8 @@ jobs:
 
     - name: Define image name
       id: prep
-      run: echo "::set-output name=tag::docker.io/${{ secrets.DOCKER_HUB_USERNAME }}/my-app:${{ github.sha }}"
+      run: echo "::set-output name=tag::docker.io/${{ secrets.DOCKER_HUB_USERNAME }}/my-app:$(echo ${GITHUB_SHA::5})"
+
 
     - name: Build and push Docker image
       uses: docker/build-push-action@v2
