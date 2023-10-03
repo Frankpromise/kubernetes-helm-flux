@@ -5,10 +5,6 @@ on:
     branches: 
       - master
       - production
-  push:
-    branches: 
-      - main
-      - production
 
 jobs:
   build_and_push:
@@ -26,10 +22,17 @@ jobs:
         username: ${{ secrets.DOCKER_HUB_USERNAME }}
         password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
 
+    - name: Define image name
+      id: prep
+      run: echo "::set-output name=tag::docker.io/${{ secrets.DOCKER_HUB_USERNAME }}/my-app:${{ github.sha }}"
+
     - name: Build and push Docker image
       uses: docker/build-push-action@v2
       with:
         push: true
         context: .
         file: k8s-rollingUpdate/appversion1/Dockerfile
-        tags: docker.io/${{ secrets.DOCKER_HUB_USERNAME }}/my-app:latest
+        tags: ${{ steps.prep.outputs.tag }}
+        
+    - name: Display the image name
+      run: echo "The image ${{ steps.prep.outputs.tag }} was pushed successfully"
