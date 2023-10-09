@@ -1,0 +1,23 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: rollingupdate
+  name: rollingupdate
+  namespace: dev
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: rollingupdate
+  strategy: {}
+  template:
+    metadata:
+      labels:
+        app: rollingupdate
+    spec:
+      containers:
+      - image: promise2022/simple-html:v2
+        name: simple-html
+        resources: {}
+status: {}

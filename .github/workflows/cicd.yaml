@@ -1,0 +1,92 @@
+name: CI/CD Pipeline
+
+on:
+  pull_request:
+    branches: 
+      - master
+  workflow_dispatch:
+
+jobs:
+  build_and_push:
+    name: Build Docker image and push to Docker Hub
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Check out code
+      uses: actions/checkout@v2
+      
+    - name: Log in to Docker Hub
+      uses: docker/login-action@v1
+      with:
+        username: ${{ secrets.DOCKER_HUB_USERNAME }}
+        password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
+
+    - name: Define image name
+      id: prep
+      run: echo "::set-output name=tag::docker.io/${{ secrets.DOCKER_HUB_USERNAME }}/my-app:$(echo ${GITHUB_SHA::5})"
+      
+    - name: Build and push Docker image
+      uses: docker/build-push-action@v2
+      with:
+        push: true
+        context: .
+        file: k8s-rollingUpdate/appversion1/Dockerfile
+        tags: ${{ steps.prep.outputs.tag }}
+        
+    - name: Display the image name
+      run: echo "The image ${{ steps.prep.outputs.tag }} was pushed successfully"
+  manual_approval:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.approveApply == 'yes'
+    steps:
+      - name: Approval for Apply
+        run: echo "Apply approved"
+  terraform_apply:
+    needs: [manual_approval]
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: k8s-rollingUpdate
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v1
+        with:
+          terraform_version: 1.0.0 # specify the desired version
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1 
+
+      - name: Terraform Init
+        run: terraform init -backend-config="bucket=terraform-state-bucket-gitlab" -backend-config="key=github-terraform.tfstate" -backend-config="region=us-east-1"
+      
+      - name: Terraform Validate
+        run: terraform validate
+
+      - name: Terraform Plan
+        run: terraform plan
+
+      - name: Terraform Apply
+        run: terraform apply -auto-approve
+        # if: github.ref == 'refs/heads/main' # Ensure this is the branch you want to auto-apply changes to
+  manual_destroy_approval:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.approveDestroy == 'yes'
+    steps:
+      - name: Approval for Destroy
+        run: echo "Destroy approved"
+  
+  terraform_destroy:
+    needs: manual_destroy_approval
+    runs-on: ubuntu-latest
+    steps:
+      - name: Terraform Destroy
+        run: terraform destroy --auto-approve
+  
