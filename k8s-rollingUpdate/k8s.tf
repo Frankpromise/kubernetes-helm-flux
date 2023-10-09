@@ -1,3 +1,15 @@
+terraform {
+  backend "s3" {
+    bucket = "terraform-state-bucket-gitlab"
+    key    = "github-terraform.tfstate"
+    region = "us-east-1"
+    # Additional options like encryption, ACL, etc.
+    encrypt        = true
+    acl            = "private"
+  }
+}
+
+
 provider "aws" {
   region = local.region
 }

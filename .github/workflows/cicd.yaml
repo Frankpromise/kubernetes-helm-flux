@@ -4,7 +4,6 @@ on:
   pull_request:
     branches: 
       - master
-      - production
 
 jobs:
   build_and_push:
@@ -25,8 +24,7 @@ jobs:
     - name: Define image name
       id: prep
       run: echo "::set-output name=tag::docker.io/${{ secrets.DOCKER_HUB_USERNAME }}/my-app:$(echo ${GITHUB_SHA::5})"
-
-
+      
     - name: Build and push Docker image
       uses: docker/build-push-action@v2
       with:
@@ -37,3 +35,21 @@ jobs:
         
     - name: Display the image name
       run: echo "The image ${{ steps.prep.outputs.tag }} was pushed successfully"
+
+  deploy_infra:
+    name: Deploy Infrastructure using Terraform
+    needs: build_and_push  # ensuring this job runs only after the `build_and_push` job completes
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Check out code
+      uses: actions/checkout@v2
+
+    - name: Setup Terraform
+      uses: hashicorp/setup-terraform@v1
+      
+    - name: Terraform Initialize
+      run: terraform init k8s-rollingUpdat/k8s.tf
+      
+    - name: Terraform Apply
+      run: terraform apply -auto-approve k8s-rollingUpdate/k8s.tf

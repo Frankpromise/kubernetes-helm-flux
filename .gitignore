@@ -1,3 +1,4 @@
 k8s-rollingUpdate/.terraform.lock.hcl
 k8s-rollingUpdate/terraform.tfstate
 k8s-rollingUpdate/.terraform/
+k8s-rollingUpdate/terraform.tfstate.backup
