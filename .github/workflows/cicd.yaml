@@ -43,7 +43,7 @@ jobs:
 
     defaults:
       run:
-        working-directory: rollingupdate 
+        working-directory: k8s-rollingUpdate 
     
     steps:
       - name: Checkout
