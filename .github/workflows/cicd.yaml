@@ -49,7 +49,6 @@ jobs:
       uses: hashicorp/setup-terraform@v1
       
     - name: Terraform Initialize
-      run: terraform init k8s-rollingUpdate/k8s.tf
-      
+      run: terraform -chdir=rollingupdate/k8s.tf init
     - name: Terraform Apply
-      run: terraform apply -auto-approve k8s-rollingUpdate/k8s.tf
+      run: terraform -chdir=rollingupdate/k8s.tf --auto-approve
